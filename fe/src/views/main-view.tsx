@@ -1,4 +1,5 @@
-import React from 'react';
+import './main-view.css';
+import React, { ChangeEvent, useState } from 'react';
 import { AnchorProvider, Idl, Program } from '@project-serum/anchor';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
@@ -9,7 +10,7 @@ const opts = {
     preflightCommitment: 'processed' as Commitment,
 };
 /* create an account  */
-const baseAccount = Keypair.generate();
+const multisigAcc = Keypair.generate();
 const programId = new PublicKey(idl.metadata.address);
 
 interface MainViewProps {
@@ -17,8 +18,18 @@ interface MainViewProps {
 }
 
 export const MainView: React.FC<MainViewProps> = ({ network }) => {
-    console.log('baseAccount', baseAccount)
+    console.log('multisigAcc', multisigAcc)
     const wallet = useWallet();
+    const [threshold, setThreshold] = useState<number>(1);
+    const [owners, setOwners] = useState<string>('');
+    const onThresholdChange = (e: ChangeEvent<any>) => {
+        setThreshold(e.target.value);
+        console.log('threshold:', threshold);
+    }
+    const onOwnersChange = (e: ChangeEvent<any>) => {
+        setOwners(e.target.value);
+        console.log('owners:', owners);
+    }
     const getProvider = async () => {
         /* create the provider and return it to the caller */
         /* network set to local network for now */
@@ -36,19 +47,22 @@ export const MainView: React.FC<MainViewProps> = ({ network }) => {
         console.log('provider:', provider);
         /* create the program interface combining the idl, program ID, and provider */
         const program = new Program(idl as Idl, programId, provider);
+        const ownersOfMutlisig = owners?.split(',');
         try {
             /* interact with the program via rpc */
-            await program.rpc.create({
+            
+            await program.rpc.createMultisig(ownersOfMutlisig, threshold, {
                 accounts: {
-                    baseAccount: baseAccount.publicKey,
-                    user: wallet.publicKey!,
-                    systemProgram: SystemProgram.programId,
+                    multisig: multisigAcc.publicKey,
                 },
-                signers: [baseAccount]
+                signers: [multisigAcc],
             });
 
-            const account = await program.account.baseAccount.fetch(baseAccount.publicKey);
-            console.log('account: ', account);
+             /* Fetch the account and check the value of count */
+            let multisigAccount = await program.account.multisig.fetch(
+                multisigAcc.publicKey,
+            );
+            console.log('account: ', multisigAccount);
       
         } catch (err) {
             console.log("Transaction error: ", err);
@@ -59,6 +73,12 @@ export const MainView: React.FC<MainViewProps> = ({ network }) => {
         <WalletMultiButton />
     ) : (
         <div className='main-view'>
+            <div>
+                <textarea rows={5} onChange={onOwnersChange}/>
+            </div>
+            <div>
+                <input type="number" min='2' value={threshold} onChange={onThresholdChange}/>
+            </div>
             <button onClick={createAccount}>Create Account</button>
         </div>
     );
