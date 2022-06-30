@@ -2,9 +2,11 @@
     "scripts": {
         "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
         "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check",
+        "build": "anchor build",
         "program-id": "solana address -k target/deploy/be-keypair.json",
         "test": "anchor test",
-        "deploy": "anchor deploy"
+        "deploy": "anchor deploy",
+        "copy-idl": "cp ./target/idl/be.json ../fe/src/be.json"
     },
     "dependencies": {
         "@project-serum/anchor": "^0.24.2"
