@@ -21,11 +21,6 @@ describe('be', () => {
         /* Call the create function via RPC */
         const multisig = anchor.web3.Keypair.generate();
         const multisigSize = 255;
-        const [multisigSigner, nonce] =
-            await anchor.web3.PublicKey.findProgramAddress(
-                [multisig.publicKey.toBuffer()],
-                program.programId,
-            );
         await program.rpc.createMultisig(owners, threshold, {
             accounts: {
                 multisig: multisig.publicKey,
@@ -52,11 +47,6 @@ describe('be', () => {
         /* Call the create function via RPC */
         const multisig = anchor.web3.Keypair.generate();
         const multisigSize = 255;
-        const [multisigSigner, nonce] =
-            await anchor.web3.PublicKey.findProgramAddress(
-                [multisig.publicKey.toBuffer()],
-                program.programId,
-            );
         await program.rpc
             .createMultisig([owner1.publicKey, owner1.publicKey], threshold, {
                 accounts: {
@@ -82,11 +72,6 @@ describe('be', () => {
         /* Call the create function via RPC */
         const multisig = anchor.web3.Keypair.generate();
         const multisigSize = 255;
-        const [multisigSigner, nonce] =
-            await anchor.web3.PublicKey.findProgramAddress(
-                [multisig.publicKey.toBuffer()],
-                program.programId,
-            );
         await program.rpc
             .createMultisig([owner1.publicKey, owner2.publicKey], new anchor.BN(3), {
                 accounts: {
