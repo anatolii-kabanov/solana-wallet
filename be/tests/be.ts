@@ -7,7 +7,7 @@ describe('be', () => {
     /* create and set a Provider */
     const provider = anchor.AnchorProvider.env();
     // Configure the client to use the local cluster.
-    anchor.setProvider(anchor.AnchorProvider.env());
+    anchor.setProvider(provider);
 
     const program = anchor.workspace.Be as Program<Be>;
     const owner1 = anchor.web3.Keypair.generate();
@@ -16,11 +16,13 @@ describe('be', () => {
     const owners = [owner1.publicKey, owner2.publicKey, owner3.publicKey];
     // Create size of min
     const threshold = new anchor.BN(2);
-
+  
+    let multisigAcc;
     it('Should create multisig', async () => {
         /* Call the create function via RPC */
         const multisig = anchor.web3.Keypair.generate();
         const multisigSize = 255;
+        multisigAcc = multisig;
         await program.rpc.createMultisig(owners, threshold, {
             accounts: {
                 multisig: multisig.publicKey,
@@ -35,12 +37,45 @@ describe('be', () => {
         });
 
         /* Fetch the account and check the value of count */
-        let multisigAccount = await program.account.multisig.fetch(
+        const multisigAccount = await program.account.multisig.fetch(
             multisig.publicKey,
         );
         console.log('Count 3: ', multisigAccount.owners.length.toString());
         assert.ok(multisigAccount.owners.length === 3);
         assert.ok(multisigAccount.threshold.eq(new anchor.BN(2)));
+    });
+
+    it('Should create transaction', async () => {
+        const transaction = anchor.web3.Keypair.generate();
+        const txSize = 255;
+        const pid = program.programId;
+        const accounts = [
+            {
+                pubkey: multisigAcc.publicKey,
+                isWritable: true,
+                isSigner: false,
+            },
+        ];
+        await program.rpc.createTransaction(pid, accounts, {
+            accounts: {
+                multisig: multisigAcc.publicKey,
+                transaction: transaction.publicKey,
+                proposer: owner1.publicKey,
+            },
+            instructions: [
+                await program.account.transaction.createInstruction(
+                    transaction,
+                    txSize,
+                ),
+            ],
+            signers: [transaction, owner1],
+        });
+
+        const txAccount = await program.account.transaction.fetch(
+            transaction.publicKey,
+        );
+
+        assert.ok(txAccount.multisig.equals(multisigAcc.publicKey));
     });
 
     it("Should throw error 'UniqueOwners' on create multisig", async () => {
@@ -93,3 +128,5 @@ describe('be', () => {
             });
     });
 });
+
+

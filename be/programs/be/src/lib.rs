@@ -32,7 +32,6 @@ pub mod be {
         ctx: Context<CreateTransaction>,
         pid: Pubkey,
         accs: Vec<TransactionAccount>,
-        data: Vec<u8>,
     ) -> Result<()> {
         let owner_index = ctx
             .accounts
@@ -49,7 +48,6 @@ pub mod be {
         let tx = &mut ctx.accounts.transaction;
         tx.program_id = pid;
         tx.accounts = accs;
-        tx.data = data;
         tx.signers = signers;
         tx.multisig = ctx.accounts.multisig.key();
         tx.owner_set_seqno = ctx.accounts.multisig.owner_set_seqno;
@@ -121,8 +119,6 @@ pub struct Transaction {
     pub program_id: Pubkey,
     // Accounts requried for the transaction.
     pub accounts: Vec<TransactionAccount>,
-    // Instruction data for the transaction.
-    pub data: Vec<u8>,
     // signers[index] is true iff multisig.owners[index] signed the transaction.
     pub signers: Vec<bool>,
     // Owner set sequence number.
