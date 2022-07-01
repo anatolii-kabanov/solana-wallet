@@ -45,7 +45,7 @@ describe('be', () => {
         assert.ok(multisigAccount.threshold.eq(new anchor.BN(2)));
     });
 
-    it('Should create transaction', async () => {
+    it('Should create transaction and confirm it', async () => {
         const transaction = anchor.web3.Keypair.generate();
         const txSize = 255;
         const pid = program.programId;
@@ -71,11 +71,26 @@ describe('be', () => {
             signers: [transaction, owner1],
         });
 
-        const txAccount = await program.account.transaction.fetch(
+        let txAccount = await program.account.transaction.fetch(
             transaction.publicKey,
         );
-
+        
         assert.ok(txAccount.multisig.equals(multisigAcc.publicKey));
+        assert.notStrictEqual(txAccount.signers, [true, false, false]);
+
+        await program.rpc.confirm({
+            accounts: {
+              multisig: multisigAcc.publicKey,
+              transaction: transaction.publicKey,
+              owner: owner2.publicKey,
+            },
+            signers: [owner2],
+        });
+
+        txAccount = await program.account.transaction.fetch(
+            transaction.publicKey,
+        );
+        assert.notStrictEqual(txAccount.signers, [true, true, false]);
     });
 
     it("Should throw error 'UniqueOwners' on create multisig", async () => {
