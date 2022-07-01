@@ -16,31 +16,28 @@ describe('be', () => {
     const owners = [owner1.publicKey, owner2.publicKey, owner3.publicKey];
     // Create size of min
     const threshold = new anchor.BN(2);
-  
-    let multisigAcc;
+    const multisigAcc = anchor.web3.Keypair.generate();
     it('Should create multisig', async () => {
         /* Call the create function via RPC */
-        const multisig = anchor.web3.Keypair.generate();
         const multisigSize = 255;
-        multisigAcc = multisig;
 
         await program.methods
             .createMultisig(owners, threshold)
             .accounts({
-                multisig: multisig.publicKey,
+                multisig: multisigAcc.publicKey,
             })
             .preInstructions([
                 await program.account.multisig.createInstruction(
-                    multisig,
+                    multisigAcc,
                     multisigSize,
                 ),
             ])
-            .signers( [multisig])
+            .signers([multisigAcc])
             .rpc();
 
         /* Fetch the account and check the value of count */
         const multisigAccount = await program.account.multisig.fetch(
-            multisig.publicKey,
+            multisigAcc.publicKey,
         );
         console.log('Count 3: ', multisigAccount.owners.length.toString());
         assert.ok(multisigAccount.owners.length === 3);

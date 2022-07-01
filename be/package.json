@@ -5,7 +5,7 @@
         "build": "anchor build",
         "program-id": "solana address -k target/deploy/be-keypair.json",
         "test": "anchor test",
-        "deploy": "anchor deploy",
+        "deploy": "anchor deploy & npm run copy-idl",
         "copy-idl": "cp ./target/idl/be.json ../fe/src/be.json"
     },
     "dependencies": {

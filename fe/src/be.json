@@ -55,10 +55,6 @@
               "defined": "TransactionAccount"
             }
           }
-        },
-        {
-          "name": "data",
-          "type": "bytes"
         }
       ]
     },
@@ -127,10 +123,6 @@
                 "defined": "TransactionAccount"
               }
             }
-          },
-          {
-            "name": "data",
-            "type": "bytes"
           },
           {
             "name": "signers",
@@ -207,7 +199,7 @@
     {
       "code": 6007,
       "name": "UniqueOwners",
-      "msg": "Owners must be unique"
+      "msg": "Owners must be unique."
     }
   ],
   "metadata": {
