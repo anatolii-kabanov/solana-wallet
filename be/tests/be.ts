@@ -23,18 +23,20 @@ describe('be', () => {
         const multisig = anchor.web3.Keypair.generate();
         const multisigSize = 255;
         multisigAcc = multisig;
-        await program.rpc.createMultisig(owners, threshold, {
-            accounts: {
+
+        await program.methods
+            .createMultisig(owners, threshold)
+            .accounts({
                 multisig: multisig.publicKey,
-            },
-            instructions: [
+            })
+            .preInstructions([
                 await program.account.multisig.createInstruction(
                     multisig,
                     multisigSize,
                 ),
-            ],
-            signers: [multisig],
-        });
+            ])
+            .signers( [multisig])
+            .rpc();
 
         /* Fetch the account and check the value of count */
         const multisigAccount = await program.account.multisig.fetch(
@@ -56,36 +58,39 @@ describe('be', () => {
                 isSigner: false,
             },
         ];
-        await program.rpc.createTransaction(pid, accounts, {
-            accounts: {
+
+        await program.methods
+            .createTransaction(pid, accounts)
+            .accounts({
                 multisig: multisigAcc.publicKey,
                 transaction: transaction.publicKey,
                 proposer: owner1.publicKey,
-            },
-            instructions: [
+            })
+            .preInstructions([
                 await program.account.transaction.createInstruction(
                     transaction,
                     txSize,
                 ),
-            ],
-            signers: [transaction, owner1],
-        });
+            ])
+            .signers([transaction, owner1])
+            .rpc();
 
         let txAccount = await program.account.transaction.fetch(
             transaction.publicKey,
         );
-        
+
         assert.ok(txAccount.multisig.equals(multisigAcc.publicKey));
         assert.notStrictEqual(txAccount.signers, [true, false, false]);
 
-        await program.rpc.confirm({
-            accounts: {
-              multisig: multisigAcc.publicKey,
-              transaction: transaction.publicKey,
-              owner: owner2.publicKey,
-            },
-            signers: [owner2],
-        });
+        await program.methods
+            .confirm()
+            .accounts({
+                multisig: multisigAcc.publicKey,
+                transaction: transaction.publicKey,
+                owner: owner2.publicKey,
+            })
+            .signers([owner2])
+            .rpc();
 
         txAccount = await program.account.transaction.fetch(
             transaction.publicKey,
@@ -97,24 +102,27 @@ describe('be', () => {
         /* Call the create function via RPC */
         const multisig = anchor.web3.Keypair.generate();
         const multisigSize = 255;
-        await program.rpc
-            .createMultisig([owner1.publicKey, owner1.publicKey], threshold, {
-                accounts: {
-                    multisig: multisig.publicKey,
-                },
-                instructions: [
-                    await program.account.multisig.createInstruction(
-                        multisig,
-                        multisigSize,
-                    ),
-                ],
-                signers: [multisig],
+        await program.methods
+            .createMultisig([owner1.publicKey, owner1.publicKey], threshold)
+            .accounts({
+                multisig: multisig.publicKey,
             })
+            .preInstructions([
+                await program.account.multisig.createInstruction(
+                    multisig,
+                    multisigSize,
+                ),
+            ])
+            .signers([multisig])
+            .rpc()
             .then(() => {
                 assert.fail('Should throw error');
             })
             .catch((e: AnchorError) => {
-                assert.equal(e.error.errorMessage, 'Owners must be unique.');
+                assert.equal(
+                    e.error.errorMessage,
+                    'Owners must be unique.',
+                );
             });
     });
 
@@ -122,26 +130,30 @@ describe('be', () => {
         /* Call the create function via RPC */
         const multisig = anchor.web3.Keypair.generate();
         const multisigSize = 255;
-        await program.rpc
-            .createMultisig([owner1.publicKey, owner2.publicKey], new anchor.BN(3), {
-                accounts: {
-                    multisig: multisig.publicKey,
-                },
-                instructions: [
-                    await program.account.multisig.createInstruction(
-                        multisig,
-                        multisigSize,
-                    ),
-                ],
-                signers: [multisig],
+        await program.methods
+            .createMultisig(
+                [owner1.publicKey, owner2.publicKey],
+                new anchor.BN(3),
+            )
+            .accounts({
+                multisig: multisig.publicKey,
             })
+            .preInstructions([
+                await program.account.multisig.createInstruction(
+                    multisig,
+                    multisigSize,
+                ),
+            ])
+            .signers([multisig])
+            .rpc()
             .then(() => {
                 assert.fail('Should throw error');
             })
             .catch((e: AnchorError) => {
-                assert.equal(e.error.errorMessage, 'Threshold must be less than or equal to the number of owners.');
+                assert.equal(
+                    e.error.errorMessage,
+                    'Threshold must be less than or equal to the number of owners.',
+                );
             });
     });
 });
-
-
