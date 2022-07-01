@@ -69,6 +69,21 @@ pub mod be {
 
         Ok(())
     }
+
+     // Rejects a transaction on behalf of an owner of the multisig.
+     pub fn reject(ctx: Context<Reject>) -> Result<()> {
+        let owner_index = ctx
+            .accounts
+            .multisig
+            .owners
+            .iter()
+            .position(|a| a == ctx.accounts.owner.key)
+            .ok_or(ErrorCode::InvalidOwner)?;
+
+        ctx.accounts.transaction.signers[owner_index] = false;
+
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
@@ -95,6 +110,16 @@ pub struct TransactionAccount {
 
 #[derive(Accounts)]
 pub struct Confirm<'info> {
+    #[account(constraint = multisig.owner_set_seqno == transaction.owner_set_seqno)]
+    multisig: Box<Account<'info, Multisig>>,
+    #[account(mut, has_one = multisig)]
+    transaction: Box<Account<'info, Transaction>>,
+    // One of the multisig owners. Checked in the handler.
+    owner: Signer<'info>,
+}
+
+#[derive(Accounts)]
+pub struct Reject<'info> {
     #[account(constraint = multisig.owner_set_seqno == transaction.owner_set_seqno)]
     multisig: Box<Account<'info, Multisig>>,
     #[account(mut, has_one = multisig)]

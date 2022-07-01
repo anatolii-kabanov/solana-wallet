@@ -21,6 +21,7 @@ export const MainView: React.FC<MainViewProps> = ({ network }) => {
     const wallet = useWallet();
     const [threshold, setThreshold] = useState<number>(1);
     const [owners, setOwners] = useState<string>('');
+
     const onThresholdChange = (e: ChangeEvent<any>) => {
         setThreshold(e.target.value);
     };
@@ -44,6 +45,7 @@ export const MainView: React.FC<MainViewProps> = ({ network }) => {
             ?.replace(/\n/g, '')
             .split(',')
             .map((o) => new PublicKey(o.toString()));
+
         try {
             /* interact with the program via methods */
             await program.methods
@@ -59,7 +61,6 @@ export const MainView: React.FC<MainViewProps> = ({ network }) => {
                 ])
                 .signers([multisigAcc])
                 .rpc();
-
             /* Fetch the account */
             let multisigAccount = await program.account.multisig.fetch(
                 multisigAcc.publicKey,
@@ -98,9 +99,8 @@ export const MainView: React.FC<MainViewProps> = ({ network }) => {
                         transactionSize,
                     ),
                 ])
-                .signers([transactionAcc,transactionAcc])
+                .signers([transactionAcc])
                 .rpc();
-
             /* Fetch the account and check the value of count */
             let txAccount = await program.account.transaction.fetch(
                 transactionAcc.publicKey,

@@ -17,6 +17,7 @@ describe('be', () => {
     // Create size of min
     const threshold = new anchor.BN(2);
     const multisigAcc = anchor.web3.Keypair.generate();
+    const transaction = anchor.web3.Keypair.generate();
     it('Should create multisig', async () => {
         /* Call the create function via RPC */
         const multisigSize = 255;
@@ -44,8 +45,7 @@ describe('be', () => {
         assert.ok(multisigAccount.threshold.eq(new anchor.BN(2)));
     });
 
-    it('Should create transaction and confirm it', async () => {
-        const transaction = anchor.web3.Keypair.generate();
+    it('Should create transaction and confirm and reject it', async () => {
         const txSize = 255;
         const pid = program.programId;
         const accounts = [
@@ -93,6 +93,21 @@ describe('be', () => {
             transaction.publicKey,
         );
         assert.notStrictEqual(txAccount.signers, [true, true, false]);
+
+        await program.methods
+            .reject()
+            .accounts({
+                multisig: multisigAcc.publicKey,
+                transaction: transaction.publicKey,
+                owner: owner2.publicKey,
+            })
+            .signers([owner2])
+            .rpc();
+
+        txAccount = await program.account.transaction.fetch(
+            transaction.publicKey,
+        );
+        assert.notStrictEqual(txAccount.signers, [true, false, false]);
     });
 
     it("Should throw error 'UniqueOwners' on create multisig", async () => {
@@ -116,10 +131,7 @@ describe('be', () => {
                 assert.fail('Should throw error');
             })
             .catch((e: AnchorError) => {
-                assert.equal(
-                    e.error.errorMessage,
-                    'Owners must be unique.',
-                );
+                assert.equal(e.error.errorMessage, 'Owners must be unique.');
             });
     });
 
@@ -154,3 +166,4 @@ describe('be', () => {
             });
     });
 });
+
