@@ -5,12 +5,14 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Commitment, Connection, Keypair, PublicKey } from '@solana/web3.js';
 import idl from '../be.json';
+import TransactionsTable from '../components/transactions-table';
+import AccountsTable from '../components/accounts-table';
+import { Button, FloatingLabel, Form } from 'react-bootstrap';
 
 const opts = {
     preflightCommitment: 'processed' as Commitment,
 };
-/* create an account  */
-const multisigAcc = Keypair.generate();
+
 const programId = new PublicKey(idl.metadata.address);
 
 interface MainViewProps {
@@ -28,18 +30,20 @@ export const MainView: React.FC<MainViewProps> = ({ network }) => {
     const onOwnersChange = (e: ChangeEvent<any>) => {
         setOwners(e.target.value);
     };
-    const getProvider = () => {
+    const getProgram = () => {
         /* create the provider and return it to the caller */
         /* network set to local network for now */
         const connection = new Connection(network, opts.preflightCommitment);
         const provider = new AnchorProvider(connection, wallet as any, opts);
-        return provider;
-    };
-
-    const createAccount = async () => {
-        const provider = getProvider();
         /* create the program interface combining the idl, program ID, and provider */
         const program = new Program(idl as Idl, programId, provider);
+        return program;
+    };
+
+    const program = getProgram();
+
+    const createAccount = async () => {
+        const multisigAcc = Keypair.generate();
         const multisigSize = 255;
         const ownersOfMutlisig = owners
             ?.replace(/\n/g, '')
@@ -71,99 +75,52 @@ export const MainView: React.FC<MainViewProps> = ({ network }) => {
         }
     };
 
-    const createTransaction = async () => {
-        const provider = getProvider();
-        /* create the program interface combining the idl, program ID, and provider */
-        const program = new Program(idl as Idl, programId, provider);
-        try {
-            /* interact with the program via rpc */
-            const transactionAcc = Keypair.generate();
-            const accounts = [
-                {
-                    pubkey: multisigAcc.publicKey,
-                    isWritable: true,
-                    isSigner: false,
-                },
-            ];
-            const transactionSize = 255;
-            await program.methods
-                .createTransaction(programId, accounts)
-                .accounts({
-                    multisig: multisigAcc.publicKey,
-                    transaction: transactionAcc.publicKey,
-                    proposer: wallet.publicKey!,
-                })
-                .preInstructions([
-                    await program.account.transaction.createInstruction(
-                        transactionAcc,
-                        transactionSize,
-                    ),
-                ])
-                .signers([transactionAcc])
-                .rpc();
-            /* Fetch the account and check the value of count */
-            let txAccount = await program.account.transaction.fetch(
-                transactionAcc.publicKey,
-            );
-            console.log('txAccount: ', txAccount);
-        } catch (err) {
-            console.log('Create transaction error: ', err);
-        }
-    };
-
-    const confirm = async (transactionKey: PublicKey) => {
-        const provider = getProvider();
-        /* create the program interface combining the idl, program ID, and provider */
-        const program = new Program(idl as Idl, programId, provider);
-        try {
-            await program.methods
-                .confirm()
-                .accounts({
-                    multisig: multisigAcc.publicKey,
-                    transaction: transactionKey,
-                    owner: wallet.publicKey!,
-                })
-                .rpc();
-        } catch (err) {
-            console.log('Confirm transaction error: ', err);
-        }
-    }
-
-    const reject = async (transactionKey: PublicKey) => {
-        const provider = getProvider();
-        /* create the program interface combining the idl, program ID, and provider */
-        const program = new Program(idl as Idl, programId, provider);
-        try {
-            await program.methods
-                .reject()
-                .accounts({
-                    multisig: multisigAcc.publicKey,
-                    transaction: transactionKey,
-                    owner: wallet.publicKey!,
-                })
-                .rpc();
-        } catch (err) {
-            console.log('Reject transaction error: ', err);
-        }
-    }
-
     return !wallet.connected ? (
         <WalletMultiButton />
     ) : (
         <div className='main-view'>
-            <div>
-                <textarea rows={5} onChange={onOwnersChange} />
-            </div>
-            <div>
-                <input
-                    type='number'
-                    min='2'
-                    value={threshold}
-                    onChange={onThresholdChange}
-                />
-            </div>
-            <button onClick={createAccount}>Create Account</button>
-            <button onClick={createTransaction}>Create Transaction</button>
+            <Form.Group className="mb-3">
+                <FloatingLabel
+                    controlId='threshold'
+                    label='Threshold'
+                    className='mb-3'
+                >
+                    <Form.Control
+                        as='input'
+                        type='number'
+                        placeholder='Minimum signers'
+                        value={threshold}
+                        onChange={onThresholdChange}
+                    />
+                </FloatingLabel>
+                <FloatingLabel controlId='owners' label='Wallet addresses'>
+                    <Form.Control
+                        as='textarea'
+                        placeholder='Put wallets addresses'
+                        style={{ height: '150px' }}
+                        value={owners}
+                        onChange={onOwnersChange}
+                    />
+                </FloatingLabel>
+            </Form.Group>
+            <Form.Group className="mb-3">
+                <Button variant='primary' onClick={createAccount}>
+                    Create Account
+                </Button>
+            </Form.Group>
+            {wallet.publicKey && (
+                <>
+                    <AccountsTable
+                        program={program}
+                        walletKey={wallet.publicKey}
+                        programId={programId}
+                    />
+                    <TransactionsTable
+                        program={program}
+                        walletKey={wallet.publicKey}
+                    />
+                </>
+            )}
         </div>
     );
 };
