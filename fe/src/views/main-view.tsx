@@ -65,8 +65,8 @@ export const MainView: React.FC<MainViewProps> = ({ network }) => {
                 ])
                 .signers([multisigAcc])
                 .rpc();
-            /* Fetch the account */
-            let multisigAccount = await program.account.multisig.fetch(
+            // Fetch the account that can be added to the list of created accounts
+            const multisigAccount = await program.account.multisig.fetch(
                 multisigAcc.publicKey,
             );
             console.log('account: ', multisigAccount);

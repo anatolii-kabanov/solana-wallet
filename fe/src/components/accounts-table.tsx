@@ -16,13 +16,21 @@ export const AccountsTable: React.FC<AccountsTableProps> = ({
     const [multisigs, setMultisigs] = useState<ProgramAccount[]>([]);
 
     const getAllMultisigs = async () => {
-        const multisigs = await program.account.multisig.all();
-        console.log('multisigs', multisigs);
-        setMultisigs(multisigs);
+            // To find only wallet created accoutns
+            const filters = [
+                {
+                    memcmp: {
+                        offset: 12, // number of bytes to skip
+                        bytes: walletKey.toBase58(), // base58 encoded string
+                    },
+                },
+            ];
+            const multisigs = await program.account.multisig.all(filters); 
+            setMultisigs(multisigs);
     };
     useEffect(() => {
         getAllMultisigs();
-    }, []);
+    }, [walletKey]);
 
     const createTransaction = async (multisigKey: PublicKey) => {
         try {
@@ -51,15 +59,11 @@ export const AccountsTable: React.FC<AccountsTableProps> = ({
                 ])
                 .signers([transactionAcc])
                 .rpc();
-            /* Fetch the account and check the value of count */
+            // Fetch transaction that can be added to the list of transactions
             let txAccount = await program.account.transaction.fetch(
                 transactionAcc.publicKey,
             );
             console.log('txAccount: ', txAccount);
-
-            const accInfo = await program.account.multisig.getAccountInfo(
-                multisigKey,
-            );
         } catch (err) {
             console.log('Create transaction error: ', err);
         }

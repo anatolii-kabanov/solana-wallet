@@ -16,13 +16,12 @@ export const TransactionsTable: React.FC<TransactionsTableProps> = ({
 
     const getAllTransactions = async () => {
         const transactions = await program.account.transaction.all();
-        console.log('transactions', transactions);
         setTransactions(transactions);
     };
 
     useEffect(() => {
         getAllTransactions();
-    }, []);
+    }, [walletKey]);
 
     const confirm = async (transactionKey: PublicKey, multisig: PublicKey) => {
         try {
