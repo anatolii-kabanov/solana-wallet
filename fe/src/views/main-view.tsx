@@ -28,7 +28,7 @@ export const MainView: React.FC<MainViewProps> = ({ network }) => {
     const onOwnersChange = (e: ChangeEvent<any>) => {
         setOwners(e.target.value);
     };
-    const getProvider = async () => {
+    const getProvider = () => {
         /* create the provider and return it to the caller */
         /* network set to local network for now */
         const connection = new Connection(network, opts.preflightCommitment);
@@ -37,7 +37,7 @@ export const MainView: React.FC<MainViewProps> = ({ network }) => {
     };
 
     const createAccount = async () => {
-        const provider = await getProvider();
+        const provider = getProvider();
         /* create the program interface combining the idl, program ID, and provider */
         const program = new Program(idl as Idl, programId, provider);
         const multisigSize = 255;
@@ -72,7 +72,7 @@ export const MainView: React.FC<MainViewProps> = ({ network }) => {
     };
 
     const createTransaction = async () => {
-        const provider = await getProvider();
+        const provider = getProvider();
         /* create the program interface combining the idl, program ID, and provider */
         const program = new Program(idl as Idl, programId, provider);
         try {
@@ -110,6 +110,42 @@ export const MainView: React.FC<MainViewProps> = ({ network }) => {
             console.log('Create transaction error: ', err);
         }
     };
+
+    const confirm = async (transactionKey: PublicKey) => {
+        const provider = getProvider();
+        /* create the program interface combining the idl, program ID, and provider */
+        const program = new Program(idl as Idl, programId, provider);
+        try {
+            await program.methods
+                .confirm()
+                .accounts({
+                    multisig: multisigAcc.publicKey,
+                    transaction: transactionKey,
+                    owner: wallet.publicKey!,
+                })
+                .rpc();
+        } catch (err) {
+            console.log('Confirm transaction error: ', err);
+        }
+    }
+
+    const reject = async (transactionKey: PublicKey) => {
+        const provider = getProvider();
+        /* create the program interface combining the idl, program ID, and provider */
+        const program = new Program(idl as Idl, programId, provider);
+        try {
+            await program.methods
+                .reject()
+                .accounts({
+                    multisig: multisigAcc.publicKey,
+                    transaction: transactionKey,
+                    owner: wallet.publicKey!,
+                })
+                .rpc();
+        } catch (err) {
+            console.log('Reject transaction error: ', err);
+        }
+    }
 
     return !wallet.connected ? (
         <WalletMultiButton />

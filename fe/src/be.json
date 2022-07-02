@@ -116,10 +116,6 @@
           {
             "name": "threshold",
             "type": "u64"
-          },
-          {
-            "name": "ownerSetSeqno",
-            "type": "u32"
           }
         ]
       }
@@ -150,10 +146,6 @@
             "type": {
               "vec": "bool"
             }
-          },
-          {
-            "name": "ownerSetSeqno",
-            "type": "u32"
           }
         ]
       }
@@ -194,31 +186,11 @@
     },
     {
       "code": 6002,
-      "name": "NotEnoughSigners",
-      "msg": "Not enough owners signed this transaction."
-    },
-    {
-      "code": 6003,
-      "name": "Overflow",
-      "msg": "Overflow when adding."
-    },
-    {
-      "code": 6004,
-      "name": "UnableToDelete",
-      "msg": "Cannot delete a transaction the owner did not create."
-    },
-    {
-      "code": 6005,
-      "name": "AlreadyExecuted",
-      "msg": "The given transaction has already been executed."
-    },
-    {
-      "code": 6006,
       "name": "InvalidThreshold",
       "msg": "Threshold must be less than or equal to the number of owners."
     },
     {
-      "code": 6007,
+      "code": 6003,
       "name": "UniqueOwners",
       "msg": "Owners must be unique."
     }

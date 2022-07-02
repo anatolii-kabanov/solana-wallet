@@ -22,7 +22,6 @@ pub mod be {
         let multisig = &mut ctx.accounts.multisig;
         multisig.owners = owners;
         multisig.threshold = threshold;
-        multisig.owner_set_seqno = 0;
         Ok(())
     }
 
@@ -50,7 +49,6 @@ pub mod be {
         tx.accounts = accs;
         tx.signers = signers;
         tx.multisig = ctx.accounts.multisig.key();
-        tx.owner_set_seqno = ctx.accounts.multisig.owner_set_seqno;
 
         Ok(())
     }
@@ -110,7 +108,7 @@ pub struct TransactionAccount {
 
 #[derive(Accounts)]
 pub struct Confirm<'info> {
-    #[account(constraint = multisig.owner_set_seqno == transaction.owner_set_seqno)]
+    #[account()]
     multisig: Box<Account<'info, Multisig>>,
     #[account(mut, has_one = multisig)]
     transaction: Box<Account<'info, Transaction>>,
@@ -120,7 +118,7 @@ pub struct Confirm<'info> {
 
 #[derive(Accounts)]
 pub struct Reject<'info> {
-    #[account(constraint = multisig.owner_set_seqno == transaction.owner_set_seqno)]
+    #[account()]
     multisig: Box<Account<'info, Multisig>>,
     #[account(mut, has_one = multisig)]
     transaction: Box<Account<'info, Transaction>>,
@@ -133,7 +131,6 @@ pub struct Reject<'info> {
 pub struct Multisig {
     pub owners: Vec<Pubkey>,
     pub threshold: u64,
-    pub owner_set_seqno: u32,
 }
 
 #[account]
@@ -146,8 +143,6 @@ pub struct Transaction {
     pub accounts: Vec<TransactionAccount>,
     // signers[index] is true iff multisig.owners[index] signed the transaction.
     pub signers: Vec<bool>,
-    // Owner set sequence number.
-    pub owner_set_seqno: u32,
 }
 
 fn validate_unique_owners(owners: &[Pubkey]) -> Result<()> {
@@ -166,14 +161,6 @@ pub enum ErrorCode {
     InvalidOwner,
     #[msg("Owners length must be non zero.")]
     InvalidOwnersLen,
-    #[msg("Not enough owners signed this transaction.")]
-    NotEnoughSigners,
-    #[msg("Overflow when adding.")]
-    Overflow,
-    #[msg("Cannot delete a transaction the owner did not create.")]
-    UnableToDelete,
-    #[msg("The given transaction has already been executed.")]
-    AlreadyExecuted,
     #[msg("Threshold must be less than or equal to the number of owners.")]
     InvalidThreshold,
     #[msg("Owners must be unique.")]
